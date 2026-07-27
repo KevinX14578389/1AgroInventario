@@ -27,9 +27,10 @@ function showModule(name) {
 // --- AUTENTICACIÓN CON SERVICIO WEB ---
 /**
  * URL base del servicio web (cambiar si está en otro host)
- * En producción, cambiar a: https://tu-dominio.com/api/auth
  */
 const API_URL = 'http://localhost:3000/api/auth';
+const API_BASE = 'http://localhost:3000/api';
+let currentCropList = [];
 
 /**
  * Registra un nuevo usuario mediante el servicio web
@@ -178,30 +179,88 @@ function logout() {
 // --- LÓGICA DE DATOS ---
 
 // Cultivos
-function saveCrop(e) {
+async function saveCrop(e) {
     e.preventDefault();
-    const data = {
-        id: Date.now(),
-        type: document.getElementById('crop-type').value,
-        area: document.getElementById('crop-area').value,
-        date: document.getElementById('crop-date').value,
-        harvestDate: document.getElementById('crop-harvest-date').value,
-        expectedYield: document.getElementById('crop-expected-yield').value,
-        status: document.getElementById('crop-status').value,
-        insumos: [],
-        labores: []
-    };
-    let list = JSON.parse(localStorage.getItem('crops')) || [];
-    list.push(data);
-    localStorage.setItem('crops', JSON.stringify(list));
-    e.target.reset(); 
-    document.getElementById('hectares-display').innerText = '0.0000';
-    document.getElementById('crop-area-hectares').value = '';
-    renderCrops();
+
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    if (!currentUser || !currentUser.id) {
+        return alert('Debes iniciar sesión para guardar un cultivo.');
+    }
+
+    const tipo = document.getElementById('crop-type').value.trim();
+    const area = document.getElementById('crop-area').value;
+    const fecha_siembra = document.getElementById('crop-date').value;
+    const fecha_cosecha = document.getElementById('crop-harvest-date').value;
+    const produccion_esperada = document.getElementById('crop-expected-yield').value;
+    const estado = document.getElementById('crop-status').value;
+
+    if (!tipo || !area || !fecha_siembra || !fecha_cosecha || !produccion_esperada) {
+        return alert('Completa todos los campos requeridos para guardar el cultivo.');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/cultivos`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                usuario_id: currentUser.id,
+                tipo,
+                area: Number(area),
+                fecha_siembra,
+                fecha_cosecha,
+                produccion_esperada: Number(produccion_esperada),
+                estado
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            return alert('Error al guardar el cultivo: ' + data.message);
+        }
+
+        alert('✅ Cultivo guardado correctamente.');
+        e.target.reset();
+        document.getElementById('hectares-display').innerText = '0.0000';
+        document.getElementById('crop-area-hectares').value = '';
+        await renderCrops();
+    } catch (error) {
+        console.error('Error guardando cultivo:', error);
+        alert('Error de conexión: no se pudo guardar el cultivo.');
+    }
 }
 
-function renderCrops() {
-    const list = JSON.parse(localStorage.getItem('crops')) || [];
+async function renderCrops() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    let list = [];
+
+    if (currentUser && currentUser.id) {
+        try {
+            const response = await fetch(`${API_BASE}/cultivos?usuario_id=${currentUser.id}`);
+            const data = await response.json();
+
+            if (data.success && Array.isArray(data.data)) {
+                list = data.data.map(i => ({
+                    id: i.id,
+                    usuario_id: i.usuario_id,
+                    type: i.tipo,
+                    area: i.area,
+                    date: i.fecha_siembra,
+                    harvestDate: i.fecha_cosecha,
+                    expectedYield: i.produccion_esperada,
+                    status: i.estado,
+                    insumos: i.insumos || [],
+                    labores: i.labores || []
+                }));
+            }
+        } catch (error) {
+            console.error('Error cargando cultivos:', error);
+        }
+    }
+
+    currentCropList = list;
     document.getElementById('table-crops').innerHTML = list.map(i => {
         const statusClass = getStatusClass(i);
         const insumosCount = i.insumos ? i.insumos.length : 0;
@@ -228,8 +287,7 @@ function renderCrops() {
 }
 
 function openEditCropModal(cropId) {
-    const crops = JSON.parse(localStorage.getItem('crops')) || [];
-    const crop = crops.find(c => c.id == cropId);
+    const crop = currentCropList.find(c => c.id == cropId);
     if (!crop) return;
 
     document.getElementById('edit-crop-id').value = crop.id;
@@ -247,23 +305,50 @@ function closeEditCropModal() {
     document.getElementById('edit-crop-modal').style.display = 'none';
 }
 
-function saveCropEdit(e) {
+async function saveCropEdit(e) {
     e.preventDefault();
     const id = Number(document.getElementById('edit-crop-id').value);
-    const crops = JSON.parse(localStorage.getItem('crops')) || [];
-    const crop = crops.find(c => c.id === id);
+    const crop = currentCropList.find(c => c.id === id);
     if (!crop) return;
 
-    crop.type = document.getElementById('edit-crop-type').value;
-    crop.area = document.getElementById('edit-crop-area').value;
-    crop.date = document.getElementById('edit-crop-date').value;
-    crop.harvestDate = document.getElementById('edit-crop-harvest-date').value;
-    crop.expectedYield = document.getElementById('edit-crop-expected-yield').value;
-    crop.status = document.getElementById('edit-crop-status').value;
+    const tipo = document.getElementById('edit-crop-type').value.trim();
+    const area = Number(document.getElementById('edit-crop-area').value);
+    const fecha_siembra = document.getElementById('edit-crop-date').value;
+    const fecha_cosecha = document.getElementById('edit-crop-harvest-date').value;
+    const produccion_esperada = Number(document.getElementById('edit-crop-expected-yield').value);
+    const estado = document.getElementById('edit-crop-status').value;
 
-    localStorage.setItem('crops', JSON.stringify(crops));
-    closeEditCropModal();
-    renderCrops();
+    if (!tipo || !area || !fecha_siembra || !fecha_cosecha || isNaN(produccion_esperada)) {
+        return alert('Completa todos los campos para editar el cultivo.');
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/cultivos/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_id: crop.usuario_id,
+                tipo,
+                area,
+                fecha_siembra,
+                fecha_cosecha,
+                produccion_esperada,
+                estado
+            })
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+            return alert('Error al actualizar el cultivo: ' + data.message);
+        }
+
+        alert('✅ Cultivo actualizado correctamente.');
+        closeEditCropModal();
+        await renderCrops();
+    } catch (error) {
+        console.error('Error actualizando cultivo:', error);
+        alert('Error de conexión: no se pudo actualizar el cultivo.');
+    }
 }
 
 // Sistema de Semáforo
@@ -713,17 +798,33 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Función para eliminar elementos
-function deleteItem(key, id) {
+async function deleteItem(key, id) {
+    if (key === 'crops') {
+        try {
+            const response = await fetch(`${API_BASE}/cultivos/${id}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            if (!data.success) {
+                return alert('Error al eliminar el cultivo: ' + data.message);
+            }
+            await renderCrops();
+        } catch (error) {
+            console.error('Error eliminando cultivo:', error);
+            alert('Error de conexión: no se pudo eliminar el cultivo.');
+        }
+        return;
+    }
+
     let list = JSON.parse(localStorage.getItem(key)) || [];
     list = list.filter(i => i.id !== id);
     localStorage.setItem(key, JSON.stringify(list));
-    if(key === 'crops') renderCrops();
-    if(key ==='warehouse') renderWarehouse();
+    if(key === 'warehouse') renderWarehouse();
     if(key === 'harvests') renderHarvests();
     if(key === 'animals') renderAnimals();
     if(key === 'staff') renderStaff();
     if(key === 'employees') renderEmployees();
     if(key === 'salaries') renderSalaries();
-}    
+}
 
 

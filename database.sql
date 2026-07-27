@@ -1,7 +1,7 @@
 /**
  * ================================================
  * BASE DE DATOS - AGROINVENTARIO
- * Evidencia: GA7-220501096-AA5-EV01
+ *
  * ================================================
  * 
  * Este archivo contiene el esquema de la base de datos
@@ -14,7 +14,8 @@ CREATE DATABASE IF NOT EXISTS agroinventario;
 -- Seleccionar la base de datos
 USE agroinventario;
 
--- Eliminar tabla si existe (para actualizaciones)
+-- Eliminar tablas si existen (para actualizaciones)
+DROP TABLE IF EXISTS cultivos;
 DROP TABLE IF EXISTS usuarios;
 
 /**
@@ -36,11 +37,34 @@ CREATE TABLE usuarios (
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Crear índice en email para búsquedas más rápidas
-CREATE INDEX idx_email ON usuarios(email);
+/**
+ * Tabla: cultivos
+ * Descripción: Gestiona los cultivos registrados por el sistema
+ * 
+ * Campos:
+ * - id: Identificador único del cultivo
+ * - nombre: Nombre del cultivo
+ * - tipo: Tipo o clasificación del cultivo
+ * - area: Área sembrada en hectáreas
+ * - fecha_siembra: Fecha de siembra
+ * - estado: Estado actual del cultivo
+ * - fecha_registro: Fecha y hora del registro
+ */
+CREATE TABLE cultivos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    tipo VARCHAR(100) NOT NULL,
+    area DECIMAL(10,2) NOT NULL,
+    fecha_siembra DATE NOT NULL,
+    fecha_cosecha DATE NOT NULL,
+    produccion_esperada DECIMAL(10,2) NOT NULL,
+    estado VARCHAR(50) NOT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insertar datos de prueba (opcional)
--- Las contraseñas están encriptadas con bcryptjs
-INSERT INTO usuarios (nombre, email, contraseña) VALUES 
-('Juan Pérez', 'juan@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36jbMFm1');
--- Contraseña de prueba: "password123"
+-- Crear índices para búsquedas más rápidas
+CREATE INDEX idx_email ON usuarios(email);
+CREATE INDEX idx_cultivos_estado ON cultivos(estado);
+
+-- No se insertan datos de prueba automáticamente.
+-- Esta base de datos queda limpia y solo almacenará los cultivos que el usuario registre.
