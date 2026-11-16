@@ -1,10 +1,21 @@
-body { font-family: sans-serif; background: #e8f5e9; margin: 0; padding: 20px; min-height: 100vh; font-size: 16px; }
+body { font-family: sans-serif; background: #f5f5f5; margin: 0; padding: 20px; min-height: 100vh; font-size: 16px; }
 .container { max-width: 1400px; margin: auto; padding-top: 80px; }
-.form-card { background: rgba(255, 255, 255, 0.5); padding: 40px; border-radius: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); backdrop-filter: blur(5px); }
+.form-card { background: rgba(255, 255, 255, 0.96); padding: 40px; border-radius: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); backdrop-filter: blur(5px); }
 input, select, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
 button { background: #2e7d32; color: white; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
 button:hover { background: #1b5e20; }
 .link { color: #2e7d32; cursor: pointer; text-decoration: underline; font-size: 16px; }
+.recovery-link-result p { color: #155724; font-weight: bold; }
+.recovery-link-button {
+    display: inline-block;
+    background: #2e7d32;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+}
+.recovery-link-button:hover { background: #1b5e20; }
 
 /* Dashboard */
 .dash-header { background: #1b5e20; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-radius: 10px 10px 0 0; font-size: 20px; }
@@ -17,17 +28,13 @@ button:hover { background: #1b5e20; }
 .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 16px; }
 .data-table th, td { border-bottom: 1px solid #ddd; padding: 15px; text-align: left; }
 .data-table th { background: #f1f8e9; }
+.salary-table-container { overflow-x: auto; margin-top: 20px; }
+.salary-table { min-width: 980px; margin-top: 0; }
+.salary-table th { white-space: nowrap; }
+.salary-table td { vertical-align: top; }
+.salary-detail { white-space: pre-line; line-height: 1.5; min-width: 190px; }
+.salary-total { white-space: nowrap; color: #1b5e20; font-size: 17px; }
 .btn-delete { background: #d32f2f; padding: 5px; width: auto; }
-#videoFondo {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;    /* Agregado el % */
-    height: 100%;   /* Agregado el % */
-    object-fit: cover;
-    z-index: -1;
-}
-
 .modal-overlay {
     display: none;
     position: fixed;
@@ -57,6 +64,16 @@ button:hover { background: #1b5e20; }
 
 .modal-content h3 {
     margin-top: 0;
+}
+
+.barcode-modal-content { text-align: center; }
+.barcode-modal-content video {
+    display: block;
+    width: 100%;
+    max-height: 280px;
+    background: #111;
+    object-fit: cover;
+    margin: 12px 0;
 }
 
 /* Semáforo de Estados */
@@ -120,24 +137,44 @@ button:hover { background: #1b5e20; }
     background-color: #fff3e0 !important; /* Naranja claro */
 }
 
-/* Botón de sonido */
-.btn-sonido {
-    position: fixed !important;
-    bottom: 20px !important;
-    right: 20px !important;
-    width: auto !important;
-    padding: 12px 20px !important;
-    font-size: 16px;
-    background: rgba(46, 125, 50, 0.8) !important;
-    border: 1px solid rgba(46, 125, 50, 0.9) !important;
-    border-radius: 25px !important;
-    z-index: 1000 !important;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+.warehouse-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
-.btn-sonido:hover {
-    background: rgba(46, 125, 50, 0.95) !important;
-    border: 1px solid rgba(46, 125, 50, 1) !important;
-    transform: scale(1.05);
+.warehouse-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-left: 5px solid;
+    border-radius: 5px;
+    background: #fafafa;
+}
+
+.warehouse-stat strong {
+    font-size: 24px;
+}
+
+.warehouse-stat.available { border-color: #2e7d32; color: #1b5e20; }
+.warehouse-stat.low { border-color: #ef6c00; color: #e65100; }
+.warehouse-stat.empty { border-color: #c62828; color: #b71c1c; }
+
+.inventory-status {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 12px;
+    color: white;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.inventory-status.disponible { background: #2e7d32; }
+.inventory-status.bajo { background: #ef6c00; }
+.inventory-status.agotado { background: #c62828; }
+
+@media (max-width: 700px) {
+    .warehouse-stats { grid-template-columns: 1fr; }
 }

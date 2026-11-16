@@ -36,11 +36,12 @@ GET http://localhost:3000/api/cultivos/1
 - Método: POST
 - Ruta: /api/cultivos
 - Descripción: Crea un nuevo cultivo.
+- Requiere autenticación: enviar el token en `Authorization: Bearer <token>`.
+- El propietario se determina a partir del token; no se debe enviar `usuario_id` en el cuerpo.
 
 Cuerpo esperado:
 ```json
 {
-  "usuario_id": 1,
   "tipo": "Cereal",
   "area": 12.5,
   "fecha_siembra": "2026-05-10",

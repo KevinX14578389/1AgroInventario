@@ -1,0 +1,148 @@
+ARCHIVO ENDPOINT - API CULTIVOS
+================================
+Proyecto: AgroInventario
+Autor: Kevin Isaza
+Fecha: 2026
+
+BASE URL
+http://localhost:3000
+
+1. ENDPOINT: GET /api/health
+Descripcion: Verifica que el servicio web este funcionando.
+Respuesta esperada:
+{
+  "success": true,
+  "message": "Servicio web operativo"
+}
+
+2. ENDPOINT: POST /api/auth/register
+Descripcion: Registra un nuevo usuario.
+Cuerpo esperado:
+{
+  "nombre": "Carlos",
+  "email": "carlos@mail.com",
+  "contraseña": "123456"
+}
+Respuesta esperada:
+{
+  "success": true,
+  "message": "¡Registro exitoso! Ahora puedes iniciar sesión."
+}
+
+3. ENDPOINT: POST /api/auth/login
+Descripcion: Inicia sesion con email y contraseña.
+Cuerpo esperado:
+{
+  "email": "carlos@mail.com",
+  "contraseña": "123456"
+}
+Respuesta esperada:
+{
+  "success": true,
+  "message": "¡Autenticación satisfactoria!"
+}
+
+4. ENDPOINT: GET /api/cultivos
+Descripcion: Consulta todos los cultivos registrados.
+Respuesta esperada:
+{
+  "success": true,
+  "message": "Cultivos consultados correctamente",
+  "data": []
+}
+
+5. ENDPOINT: GET /api/cultivos/:id
+Descripcion: Consulta un cultivo por su ID.
+Ejemplo:
+GET http://localhost:3000/api/cultivos/1
+
+6. ENDPOINT: POST /api/cultivos
+Descripcion: Registra un nuevo cultivo.
+Cuerpo esperado:
+{
+  "usuario_id": 1,
+  "tipo": "Maiz",
+  "area": 12.5,
+  "fecha_siembra": "2026-05-10",
+  "fecha_cosecha": "2026-09-10",
+  "produccion_esperada": 6500,
+  "estado": "En crecimiento"
+}
+Respuesta esperada:
+{
+  "success": true,
+  "message": "Cultivo registrado correctamente"
+}
+
+7. ENDPOINT: PUT /api/cultivos/:id
+Descripcion: Actualiza los datos de un cultivo existente.
+Cuerpo esperado:
+{
+  "usuario_id": 1,
+  "tipo": "Maiz",
+  "area": 14,
+  "fecha_siembra": "2026-05-10",
+  "fecha_cosecha": "2026-09-15",
+  "produccion_esperada": 7000,
+  "estado": "Cosechado"
+}
+
+8. ENDPOINT: DELETE /api/cultivos/:id
+Descripcion: Elimina un cultivo por su ID.
+Respuesta esperada:
+{
+  "success": true,
+  "message": "Cultivo eliminado correctamente"
+}
+
+NOTA:
+Los endpoints de cultivos requieren un token de autenticacion cuando asi se indica.
+
+RECUPERACION DE CONTRASEÑA
+=========================
+
+POST /api/auth/forgot-password
+Solicita el envio de un enlace. Cuerpo:
+{
+  "email": "carlos@mail.com"
+}
+La respuesta no revela si el correo esta registrado. El enlace vence en 30 minutos y solo puede usarse una vez.
+
+POST /api/auth/reset-password
+Actualiza la contraseña usando el token incluido en el enlace recibido por correo. Cuerpo:
+{
+  "token": "<token-del-enlace>",
+  "contraseña": "nueva-clave-segura"
+}
+
+CONFIGURACION SMTP
+==================
+El servidor lee primero el archivo privado .env.local (no subirlo a Git) y luego .env.
+Para probar la recuperación localmente cuando la red bloquea SMTP, agrega
+RESET_LINK_DELIVERY=console a .env.local y reinicia el servidor. Al solicitar el enlace,
+este se muestra como un botón en la aplicación. Este modo solo acepta solicitudes
+desde el origen local configurado en FRONTEND_URL y la misma computadora, y se desactiva
+con NODE_ENV=production. No lo uses como reemplazo del correo en un despliegue real.
+
+Para Gmail, activa la verificacion en dos pasos de la cuenta remitente y crea una
+contraseña de aplicacion en la configuracion de seguridad de Google. No uses la
+contraseña normal de Gmail. Agrega esto a .env.local:
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=tu-cuenta@gmail.com
+SMTP_PASSWORD=contraseña-de-aplicacion-de-16-caracteres
+MAIL_FROM=tu-cuenta@gmail.com
+FRONTEND_URL=http://127.0.0.1:5500/index.html
+
+El servidor también acepta estas variables de entorno:
+SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD, MAIL_FROM y FRONTEND_URL.
+
+SMTP_PORT suele ser 587 (TLS) o 465 (SSL); SMTP_SECURE debe ser "true" para SSL.
+MAIL_FROM puede ser igual a SMTP_USER. FRONTEND_URL debe apuntar al index.html publicado.
+Para uso local se puede usar http://127.0.0.1:5500/index.html; para otros usuarios debe ser
+la direccion publica del sitio. No publiques las credenciales SMTP. Sin SMTP configurado,
+la solicitud devuelve un error explicito en lugar de simular que se envio el correo.
+Los errores de entrega quedan registrados en la consola del servidor; la respuesta se
+mantiene generica para no revelar si una cuenta existe.

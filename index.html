@@ -8,38 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-     <video autoplay muted loop id="videoFondo">
-        <source src="video/fondo.mp4" type="video/mp4">
-       </video>
-
-<script>
-function activarSonido() {
-    let video = document.getElementById("videoFondo");
-    let boton = document.querySelector(".btn-sonido");
-    
-    // Toggle: si está muted, lo desmutea; si no está muted, lo mutea
-    if (video.muted) {
-        video.muted = false;
-        video.play();
-        boton.textContent = "🔇 Detener música";
-    } else {
-        video.muted = true;
-        boton.textContent = "🔊 Activar música";
-    }
-}
-
-// Función para mostrar/ocultar contraseña
-const mostrarContrasenaCheckbox = document.getElementById('mostrarContrasena');
-if (mostrarContrasenaCheckbox) {
-    mostrarContrasenaCheckbox.addEventListener('change', function() {
-        let inputContrasena = document.getElementById('contrasena');
-        if (inputContrasena) {
-            inputContrasena.type = this.checked ? 'text' : 'password';
-        }
-    });
-}
-</script>
-
     <div class="container">
         <div id="auth-container">
             <div id="login-section" class="form-card">
@@ -47,7 +15,7 @@ if (mostrarContrasenaCheckbox) {
                 <h3>Iniciar Sesión</h3>
                 <input type="email" id="login-email" placeholder="Correo electrónico">
                 <input type="password" id="login-password" placeholder="Contraseña">
-                <button onclick="loginUser()">Ingresar</button>
+                <button onclick="loginUser(event)">Ingresar</button>
                 <div class="footer-links">
                     <p>¿No tienes cuenta? <span class="link" onclick="showRegister()">Regístrate</span></p>
                     <p><span class="link" onclick="showRecover()">¿Olvidaste tu contraseña?</span></p>
@@ -65,17 +33,18 @@ if (mostrarContrasenaCheckbox) {
             </div>
 
             <div id="recover-section" class="form-card" style="display:none;">
-                <h2>Recuperar</h2>
-                <div id="step-email">
-                    <input type="email" id="recover-email" placeholder="Correo electrónico">
-                    <button onclick="sendCode()">Enviar código</button>
-                </div>
-                <div id="step-code" style="display:none;">
-                    <p>Código: 1234</p>
-                    <input type="text" id="input-code" placeholder="Código">
-                    <input type="password" id="new-pass" placeholder="Nueva contraseña">
-                    <button onclick="changePassword()">Cambiar contraseña</button>
-                </div>
+                <h2>Recuperar contraseña</h2>
+                <form id="step-email" onsubmit="sendRecoveryLink(event)">
+                    <input type="email" id="recover-email" placeholder="Correo electrónico" autocomplete="email" required>
+                    <button type="submit">Enviar enlace</button>
+                </form>
+                <div id="recovery-link-result" hidden></div>
+                <form id="step-reset" style="display:none;" onsubmit="changePassword(event)">
+                    <p>Ingresa tu nueva contraseña.</p>
+                    <input type="password" id="new-pass" placeholder="Nueva contraseña" minlength="6" autocomplete="new-password" required>
+                    <input type="password" id="confirm-new-pass" placeholder="Confirma tu nueva contraseña" minlength="6" autocomplete="new-password" required>
+                    <button type="submit">Cambiar contraseña</button>
+                </form>
                 <p><span class="link" onclick="showLogin()">Volver</span></p>
             </div>
         </div>
@@ -91,7 +60,7 @@ if (mostrarContrasenaCheckbox) {
 
             <nav class="dash-nav">
                 <button onclick="showModule('crops')">🌱 Cultivos</button>
-                <button onclick="showModule('warehouse')">📦 Bodega</button>
+                <button onclick="showModule('warehouse')">📦 Consultar inventario</button>
                 <button onclick="showModule('harvests')">🚜 Cosechas</button>
                 <button onclick="showModule('animals')">🐄 Animales</button>
                 <button onclick="showModule('staff')">👷 Trabajadores</button>
@@ -106,18 +75,18 @@ if (mostrarContrasenaCheckbox) {
                     <!-- FORMULARIO PRINCIPAL -->
                     <form onsubmit="saveCrop(event)" class="grid-form">
                         <div style="grid-column: 1/-1;"><label style="font-weight: bold; display: block; margin-bottom: 5px;">🌱 Tipo de Cultivo</label>
-                        <small style="display: block; color: #666; margin-bottom: 5px;">Ej: Maíz, Tomate, Papa, etc.</small>
-                        <input type="text" id="crop-type" placeholder="Ej: Maíz" required></div>
+                        <small style="display: block; color: #666; margin-bottom: 5px;">tipo de cultivo</small>
+                        <input type="text" id="crop-type" required></div>
 
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📐 Área del Lote</label>
-                        <small style="display: block; color: #666; margin-bottom: 5px;">En metros cuadrados</small>
-                        <input type="number" id="crop-area" placeholder="Ej: 1000" required oninput="updateHectares()">
-                        <small style="display: block; color: #666; margin: 5px 0;">O ingresa en hectáreas:</small>
-                        <input type="number" id="crop-area-hectares" placeholder="Ej: 0.1" step="0.01" oninput="updateFromHectares()">
+                        <small style="display: block; color: #666; margin-bottom: 5px;">metros cuadrados</small>
+                        <input type="number" id="crop-area" required oninput="updateHectares()">
+                        <small style="display: block; color: #666; margin: 5px 0;">ingresa en hectáreas</small>
+                        <input type="number" id="crop-area-hectares" step="0.01" oninput="updateFromHectares()">
                         <small style="display: block; color: #2e7d32; margin-top: 5px;">Equivale a: <span id="hectares-display">0.00</span> hectáreas</small></div>
 
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📅 Fecha de Siembra</label>
-                        <small style="display: block; color: #666; margin-bottom: 5px;">Cuándo se sembró</small>
+                        <small style="display: block; color: #666; margin-bottom: 5px;">fecha </small>
                         <input type="date" id="crop-date" required></div>
 
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">🚜 Fecha Estimada de Cosecha</label>
@@ -125,8 +94,8 @@ if (mostrarContrasenaCheckbox) {
                         <input type="date" id="crop-harvest-date" placeholder="Opcional"></div>
 
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📊 Producción Esperada</label>
-                        <small style="display: block; color: #666; margin-bottom: 5px;">En kilos o toneladas</small>
-                        <input type="number" id="crop-expected-yield" placeholder="Ej: 500" step="0.1"></div>
+                        <small style="display: block; color: #666; margin-bottom: 5px;">En kilos, toneladas</small>
+                        <input type="number" id="crop-expected-yield" step="0.1"></div>
 
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📈 Estado Actual</label>
                         <small style="display: block; color: #666; margin-bottom: 5px;">Fase del cultivo</small>
@@ -146,12 +115,12 @@ if (mostrarContrasenaCheckbox) {
                         <h3>🧮 Calculadora de Densidad de Siembra</h3>
                         <div class="grid-form" style="background: white; padding: 10px; border-radius: 5px;">
                             <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📏 Distancia entre Plantas</label>
-                            <small style="display: block; color: #666; margin-bottom: 5px;">En centímetros</small>
-                            <input type="number" id="calc-dist-plantas" placeholder="Ej: 30" step="0.1"></div>
+                            <small style="display: block; color: #666; margin-bottom: 5px;">centímetros</small>
+                            <input type="number" id="calc-dist-plantas" step="0.1"></div>
 
                             <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📐 Distancia entre Surcos</label>
-                            <small style="display: block; color: #666; margin-bottom: 5px;">En centímetros</small>
-                            <input type="number" id="calc-dist-surcos" placeholder="Ej: 80" step="0.1"></div>
+                            <small style="display: block; color: #666; margin-bottom: 5px;">centímetros</small>
+                            <input type="number" id="calc-dist-surcos" step="0.1"></div>
 
                             <div style="display:flex; gap:10px; align-items: center;">
                                 <button type="button" onclick="calculatePlantDensity()">🔍 Calcular Plantas</button>
@@ -198,7 +167,7 @@ if (mostrarContrasenaCheckbox) {
                             <div style="margin: 15px 0;">
                                 <label style="font-weight: bold; display: block; margin-bottom: 5px;">📊 Cantidad a Aplicar</label>
                                 <small style="display: block; color: #666; margin-bottom: 5px;">Según la unidad del insumo</small>
-                                <input type="number" id="insumo-quantity" placeholder="Ej: 2" style="width:100%; margin-bottom: 10px;">
+                                <input type="number" id="insumo-quantity" style="width:100%; margin-bottom: 10px;">
                             </div>
 
                             <div style="margin: 15px 0;">
@@ -227,7 +196,7 @@ if (mostrarContrasenaCheckbox) {
 
                             <div style="margin: 15px 0;">
                                 <label style="font-weight: bold; display: block; margin-bottom: 5px;">👷 Trabajador Responsable</label>
-                                <small style="display: block; color: #666; margin-bottom: 5px;">Selecciona un trabajador registrado para esta labor</small>
+                                <small style="display: block; color: #666; margin-bottom: 5px;">trabajador registrados </small>
                                 <select id="labor-employee" style="width:100%; margin-bottom: 10px;">
                                     <option value="">Seleccionar trabajador</option>
                                 </select>
@@ -235,7 +204,7 @@ if (mostrarContrasenaCheckbox) {
 
                             <div style="margin: 15px 0;">
                                 <label style="font-weight: bold; display: block; margin-bottom: 5px;">📝 Descripción de la Labor</label>
-                                <small style="display: block; color: #666; margin-bottom: 5px;">Ej: Fumigación, Deshierbe, Riego, Fertilización, etc.</small>
+                                <small style="display: block; color: #666; margin-bottom: 5px;">etc</small>
                                 <input type="text" id="labor-description" placeholder="Describa la labor realizada" style="width:100%; margin-bottom: 10px;">
                             </div>
 
@@ -254,11 +223,11 @@ if (mostrarContrasenaCheckbox) {
                                 <input type="hidden" id="edit-crop-id">
                                 <div style="margin: 15px 0;">
                                     <label style="font-weight: bold; display: block; margin-bottom: 5px;">🌱 Tipo de Cultivo</label>
-                                    <input type="text" id="edit-crop-type" placeholder="Ej: Maíz" style="width:100%; margin-bottom: 10px;" required>
+                                    <input type="text" id="edit-crop-type" style="width:100%; margin-bottom: 10px;" required>
                                 </div>
                                 <div style="margin: 15px 0;">
                                     <label style="font-weight: bold; display: block; margin-bottom: 5px;">📐 Área del Lote (m²)</label>
-                                    <input type="number" id="edit-crop-area" placeholder="Ej: 1000" style="width:100%; margin-bottom: 10px;" required>
+                                    <input type="number" id="edit-crop-area" placeholder="000" style="width:100%; margin-bottom: 10px;" required>
                                 </div>
                                 <div style="margin: 15px 0;">
                                     <label style="font-weight: bold; display: block; margin-bottom: 5px;">📅 Fecha de Siembra</label>
@@ -270,7 +239,7 @@ if (mostrarContrasenaCheckbox) {
                                 </div>
                                 <div style="margin: 15px 0;">
                                     <label style="font-weight: bold; display: block; margin-bottom: 5px;">📊 Producción Esperada (kg)</label>
-                                    <input type="number" id="edit-crop-expected-yield" placeholder="Ej: 500" step="0.1" style="width:100%; margin-bottom: 10px;">
+                                    <input type="number" id="edit-crop-expected-yield" placeholder="000" step="0.1" style="width:100%; margin-bottom: 10px;">
                                 </div>
                                 <div style="margin: 15px 0;">
                                     <label style="font-weight: bold; display: block; margin-bottom: 5px;">📈 Estado Actual</label>
@@ -291,20 +260,28 @@ if (mostrarContrasenaCheckbox) {
                 </section>
 
                 <section id="mod-warehouse" class="module-section" style="display:none;">
-                    <h2>Bodega</h2>
+                    <h2>Inventario de insumos y materiales</h2>
+                    <div id="warehouse-summary" role="status" style="background: #f1f8e9; padding: 12px; margin-bottom: 15px; border-radius: 5px;">
+                        Cargando disponibilidad...
+                    </div>
+                    <div class="warehouse-stats" aria-label="Resumen de disponibilidad">
+                        <div class="warehouse-stat available"><strong id="warehouse-available">0</strong><span>Disponibles</span></div>
+                        <div class="warehouse-stat low"><strong id="warehouse-low">0</strong><span>Stock bajo</span></div>
+                        <div class="warehouse-stat empty"><strong id="warehouse-empty">0</strong><span>Agotados</span></div>
+                    </div>
                     <form onsubmit="saveWarehouse(event)" class="grid-form">
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📦 Nombre del Artículo</label>
-                        <input type="text" id="wh-name" placeholder="Ej: Fertilizante" required></div>
+                        <input type="text" id="wh-name" required></div>
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📊 Cantidad</label>
-                        <input type="number" id="wh-qty" placeholder="Ej: 100" required></div>
+                        <input type="number" id="wh-qty" required></div>
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">⚖️ Unidad</label>
-                        <input type="text" id="wh-unit" placeholder="Ej: kg, litros" required></div>
+                        <input type="text" id="wh-unit" required></div>
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📉 Stock Mínimo</label>
-                        <input type="number" id="wh-min-stock" placeholder="Ej: 10" required></div>
+                        <input type="number" id="wh-min-stock" required></div>
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📅 Fecha de Vencimiento</label>
                         <input type="date" id="wh-expiry"></div>
                         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">💰 Costo Unitario ($)</label>
-                        <input type="number" id="wh-cost" placeholder="Ej: 5000" step="0.01" required></div>
+                        <input type="number" id="wh-cost" step="0.01" required></div>
                         <div style="grid-column: 1/-1; text-align: center; margin-top: 10px;">
                         <button type="submit">💾 Agregar Artículo</button></div>
                     </form>
@@ -313,6 +290,13 @@ if (mostrarContrasenaCheckbox) {
                     <div style="margin: 20px 0;">
                         <label style="font-weight: bold; display: block; margin-bottom: 5px;">🔍 Buscar Artículo</label>
                         <input type="text" id="warehouse-search" placeholder="Escribe para filtrar..." oninput="filterWarehouse()">
+                        <label for="warehouse-status-filter" style="font-weight: bold; display: block; margin: 10px 0 5px;">⚠️ Filtrar por disponibilidad</label>
+                        <select id="warehouse-status-filter" onchange="filterWarehouse()">
+                            <option value="todos">Todos los estados</option>
+                            <option value="disponible">Disponibles</option>
+                            <option value="bajo">Stock bajo</option>
+                            <option value="agotado">Agotados</option>
+                        </select>
                     </div>
 
                     <!-- TABLA DE INVENTARIO -->
@@ -330,7 +314,7 @@ if (mostrarContrasenaCheckbox) {
                                 <th>⚙️ Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="table-warehouse"></tbody>
+                        <tbody id="table-warehouse"><tr><td colspan="9">No hay insumos registrados.</td></tr></tbody>
                     </table>
 
                     <!-- KARDEX (HISTORIAL DE MOVIMIENTOS) -->
@@ -355,13 +339,27 @@ if (mostrarContrasenaCheckbox) {
                     </div>
                 </section>
 
+                <div id="barcode-modal" class="modal-overlay" style="display:none;">
+                    <div class="modal-content barcode-modal-content">
+                        <h3>📱 Escanear código de barras</h3>
+                        <video id="barcode-video" autoplay playsinline></video>
+                        <p id="barcode-status">Apunta la cámara al código del artículo.</p>
+                        <label for="barcode-value">Código leído o ingresado</label>
+                        <input type="text" id="barcode-value" placeholder="Código de barras">
+                        <button type="button" onclick="searchBarcodeItem()">🔍 Buscar artículo</button>
+                        <button type="button" onclick="closeBarcodeScanner()">❌ Cerrar</button>
+                    </div>
+                </div>
+
                 <section id="mod-harvests" class="module-section" style="display:none;">
                     <h2>Registro de Cosechas</h2>
                     <form onsubmit="saveHarvest(event)" class="grid-form">
+                        <input type="hidden" id="hv-id">
                         <input type="text" id="hv-crop" placeholder="Producto cosechado" required>
                         <input type="number" id="hv-kilos" placeholder="Kilos totales" required>
                         <input type="date" id="hv-date" required>
-                        <button type="submit">Registrar</button>
+                        <button id="harvest-submit" type="submit">Registrar</button>
+                        <button id="harvest-cancel" type="button" onclick="resetHarvestForm()" style="display:none;">Cancelar</button>
                     </form>
                     <table class="data-table">
                         <thead><tr><th>Producto</th><th>Kilos</th><th>Fecha</th><th>Acción</th></tr></thead>
@@ -372,10 +370,11 @@ if (mostrarContrasenaCheckbox) {
                 <section id="mod-animals" class="module-section" style="display:none;">
                     <h2>Registro de Animales</h2>
                     <form onsubmit="saveAnimal(event)" class="grid-form">
-                        <input type="text" id="an-type" placeholder="Tipo (Vaca, Cerdo...)" required>
+                        <input type="text" id="an-type" placeholder="Tipo ()" required>
                         <input type="number" id="an-qty" placeholder="Cantidad" required>
                         <input type="text" id="an-age" placeholder="Edad prom." required>
-                        <button type="submit">Registrar</button>
+                        <button id="animal-submit" type="submit">Registrar</button>
+                        <button id="animal-cancel" type="button" onclick="resetAnimalForm()" style="display:none;">Cancelar</button>
                     </form>
                     <table class="data-table">
                         <thead><tr><th>Tipo</th><th>Cant.</th><th>Edad</th><th>Acción</th></tr></thead>
@@ -386,11 +385,12 @@ if (mostrarContrasenaCheckbox) {
                 <section id="mod-staff" class="module-section" style="display:none;">
     <!-- REGISTRO DE EMPLEADOS -->
     <h2>Registro de Empleados</h2>
-    <form onsubmit="saveEmployee(event)" class="grid-form">
+    <form id="employee-form" onsubmit="saveEmployee(event)" class="grid-form">
         <input type="text" id="emp-name" placeholder="Nombre del empleado" required>
         <input type="text" id="emp-cedula" placeholder="Cédula" required>
         <input type="text" id="emp-cargo" placeholder="Cargo" required>
-        <button type="submit">Registrar Empleado</button>
+        <button id="employee-submit" type="submit">Registrar Empleado</button>
+        <button id="employee-cancel" type="button" onclick="resetEmployeeForm()" style="display:none;">Cancelar</button>
     </form>
     <table class="data-table">
         <thead>
@@ -406,21 +406,6 @@ if (mostrarContrasenaCheckbox) {
 
     <!-- CÁLCULO DE SALARIOS -->
     <h2 style="margin-top: 40px;">Cálculo de Salarios</h2>
-    <div style="background: #f1f8e9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-        <strong>Guía de campos:</strong>
-        <table class="data-table" style="margin-top: 10px;">
-            <thead>
-                <tr>
-                    <th>Empleado</th>
-                    <th>Cargo</th>
-                    <th>Días Trabajados</th>
-                    <th>Horas Extras</th>
-                    <th>Descuentos</th>
-                    <th>Total a Pagar</th>
-                </tr>
-            </thead>
-        </table>
-    </div>
     <form onsubmit="saveSalary(event)" class="grid-form">
         <div style="grid-column: 1/-1;"><label style="font-weight: bold; display: block; margin-bottom: 5px;">👤 Seleccionar Empleado</label>
         <select id="sal-emp" placeholder="Seleccionar empleado" required style="width: 100%; margin-bottom: 10px;">
@@ -428,40 +413,41 @@ if (mostrarContrasenaCheckbox) {
         </select></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">💰 Pago por Día ($)</label>
-        <input type="number" id="sal-pago-dia" placeholder="Ej: 50000" required></div>
+        <input type="number" id="sal-pago-dia" required></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">🕐 Hora de Entrada</label>
-        <input type="time" id="sal-hora-entrada" placeholder="Hora de entrada" required></div>
+        <input type="time" id="sal-hora-entrada" required></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">🕒 Hora de Salida</label>
-        <input type="time" id="sal-hora-salida" placeholder="Hora de salida" required></div>
+        <input type="time" id="sal-hora-salida" required></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📅 Días de Permiso</label>
-        <input type="number" id="sal-dias-permiso" placeholder="Ej: 2" value="0"></div>
+        <input type="number" id="sal-dias-permiso" value="0"></div>
         
-        <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">⏰ Horas Extras</label><small style="display: block; color: #666; margin-bottom: 5px;">Horas trabajadas fuera del horario normal</small>
-        <input type="number" id="sal-horas-extras" placeholder="Ej: 5" value="0" oninput="calculateSalaryTotal()"></div>
+        <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">⏰ Horas Extras</label><small style="display: block; color: #666; margin-bottom: 5px;">..</small>
+        <input type="number" id="sal-horas-extras" value="0" oninput="calculateSalaryTotal()"></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">💵 Precio Hora Extra ($)</label><small style="display: block; color: #666; margin-bottom: 5px;">Tarifa por cada hora extra</small>
-        <input type="number" id="sal-precio-hora-extra" placeholder="Ej: 15000" value="0" required oninput="calculateSalaryTotal()"></div>
+        <input type="number" id="sal-precio-hora-extra" value="0" required oninput="calculateSalaryTotal()"></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">🏥 Descuento Salud ($)</label>
-        <input type="number" id="sal-desc-salud" placeholder="Ej: 10000" value="0" oninput="calculateSalaryTotal()"></div>
+        <input type="number" id="sal-desc-salud" value="0" oninput="calculateSalaryTotal()"></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">🏦 Descuento Pensión ($)</label>
-        <input type="number" id="sal-desc-pension" placeholder="Ej: 15000" value="0" oninput="calculateSalaryTotal()"></div>
+        <input type="number" id="sal-desc-pension" value="0" oninput="calculateSalaryTotal()"></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">💳 Descuento Préstamo ($)</label>
-        <input type="number" id="sal-desc-prestamo" placeholder="Ej: 5000" value="0" oninput="calculateSalaryTotal()"></div>
+        <input type="number" id="sal-desc-prestamo" value="0" oninput="calculateSalaryTotal()"></div>
         
         <div><label style="font-weight: bold; display: block; margin-bottom: 5px;">📊 Días Trabajados</label><small style="display: block; color: #666; margin-bottom: 5px;">Días que laboró en el período</small>
-        <input type="number" id="sal-dias-trabajados" placeholder="Ej: 20" required oninput="calculateSalaryTotal()"></div>
+        <input type="number" id="sal-dias-trabajados" required oninput="calculateSalaryTotal()"></div>
         <div style="background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
             <strong>Total a Pagar: </strong> $<span id="sal-total-display">0</span>
         </div>
         <button type="submit">Calcular y Guardar</button>
     </form>
-    <table class="data-table">
+    <div class="salary-table-container">
+    <table class="data-table salary-table">
         <thead>
             <tr>
                 <th>Empleado</th>
@@ -475,6 +461,7 @@ if (mostrarContrasenaCheckbox) {
         </thead>
         <tbody id="table-salaries"></tbody>
     </table>
+    </div>
     <div style="background: #f1f8e9; padding: 15px; border-radius: 5px; margin-top: 20px;">
         <h3>Total a Pagar a Todos los Trabajadores: $<span id="total-all-salaries">0</span></h3>
     </div>
@@ -483,8 +470,6 @@ if (mostrarContrasenaCheckbox) {
         </div>
     </div>
     
-    <button type="button" class="btn-sonido" onclick="activarSonido()">🔊 Activar música</button>
-    
-    <script src="script.js"></script>
+    <script src="script.js?v=4"></script>
 </body>
 </html>
